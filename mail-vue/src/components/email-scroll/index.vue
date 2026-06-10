@@ -127,43 +127,47 @@
               <div class="email-right" :style="showUserInfo ? 'align-self: start;':''">
                 <span class="email-time" :style="(item.unread === EmailUnreadEnum.UNREAD && showUnread) ? 'font-weight: bold' : ''">{{ item.formatCreateTime }}</span>
                 <div class="email-row-actions" @click.stop>
-                  <div
-                      v-if="showUnread && item.unread === EmailUnreadEnum.UNREAD"
-                      class="row-action-item"
-                      :title="t('markAsRead')"
-                      @click.stop="rowMarkRead(item)"
-                  >
-                    <Icon class="row-action-icon" icon="fluent:mail-read-20-regular" width="18" height="18"/>
-                    <span class="row-action-label">{{ t('markAsRead') }}</span>
-                  </div>
-                  <div
-                      v-if="['email','send','star','label'].includes(props.type)"
-                      class="row-action-item"
-                      :title="t('archive')"
-                      @click.stop="archiveEmail(item)"
-                  >
-                    <Icon class="row-action-icon" icon="hugeicons:archive-01" width="18" height="18"/>
-                    <span class="row-action-label">{{ t('archive') }}</span>
-                  </div>
-                  <div
-                      v-if="props.type === 'archive'"
-                      class="row-action-item"
-                      :title="t('unarchive')"
-                      @click.stop="unarchiveEmail(item)"
-                  >
-                    <Icon class="row-action-icon" icon="hugeicons:archive-02" width="18" height="18"/>
-                    <span class="row-action-label">{{ t('unarchive') }}</span>
-                  </div>
+                  <el-tooltip :content="t('markAsRead')" placement="top" effect="dark">
+                    <div
+                        v-if="showUnread && item.unread === EmailUnreadEnum.UNREAD"
+                        class="row-action-item"
+                        @click.stop="rowMarkRead(item)"
+                    >
+                      <Icon class="row-action-icon" icon="fluent:mail-read-20-regular" width="18" height="18"/>
+                      <span class="row-action-label">{{ t('markAsRead') }}</span>
+                    </div>
+                  </el-tooltip>
+                  <el-tooltip :content="t('archive')" placement="top" effect="dark">
+                    <div
+                        v-if="['email','send','star','label'].includes(props.type)"
+                        class="row-action-item"
+                        @click.stop="archiveEmail(item)"
+                    >
+                      <Icon class="row-action-icon" icon="hugeicons:archive-01" width="18" height="18"/>
+                      <span class="row-action-label">{{ t('archive') }}</span>
+                    </div>
+                  </el-tooltip>
+                  <el-tooltip :content="t('unarchive')" placement="top" effect="dark">
+                    <div
+                        v-if="props.type === 'archive'"
+                        class="row-action-item"
+                        @click.stop="unarchiveEmail(item)"
+                    >
+                      <Icon class="row-action-icon" icon="hugeicons:archive-02" width="18" height="18"/>
+                      <span class="row-action-label">{{ t('unarchive') }}</span>
+                    </div>
+                  </el-tooltip>
                   <el-popover placement="bottom-end" trigger="click" :width="220" v-if="labelStore.labels.length">
                     <template #reference>
-                      <div
-                          class="row-action-item"
-                          :title="t('labels')"
-                          @click.stop
-                      >
-                        <Icon class="row-action-icon" icon="mdi:label-outline" width="18" height="18"/>
-                        <span class="row-action-label">{{ t('labels') }}</span>
-                      </div>
+                      <el-tooltip :content="t('labels')" placement="top" effect="dark">
+                        <div
+                            class="row-action-item"
+                            @click.stop
+                        >
+                          <Icon class="row-action-icon" icon="mdi:label-outline" width="18" height="18"/>
+                          <span class="row-action-label">{{ t('labels') }}</span>
+                        </div>
+                      </el-tooltip>
                     </template>
                     <div class="label-checkbox-list">
                       <div
@@ -179,29 +183,31 @@
                       </div>
                     </div>
                   </el-popover>
-                  <div
-                      v-if="showStar"
-                      class="row-action-item"
-                      :title="t('star')"
-                      @click.stop="starChange(item)"
-                  >
-                    <Icon
-                        class="row-action-icon"
-                        :icon="item.isStar ? 'fluent-color:star-16' : 'solar:star-line-duotone'"
-                        width="18"
-                        height="18"
-                    />
-                    <span class="row-action-label">{{ t('star') }}</span>
-                  </div>
-                  <div
-                      v-perm="'email:delete'"
-                      class="row-action-item"
-                      :title="t('delete')"
-                      @click.stop="rowDelete(item)"
-                  >
-                    <Icon class="row-action-icon" icon="uiw:delete" width="15" height="15"/>
-                    <span class="row-action-label">{{ t('delete') }}</span>
-                  </div>
+                  <el-tooltip :content="t('star')" placement="top" effect="dark">
+                    <div
+                        v-if="showStar"
+                        class="row-action-item"
+                        @click.stop="starChange(item)"
+                    >
+                      <Icon
+                          class="row-action-icon"
+                          :icon="item.isStar ? 'fluent-color:star-16' : 'solar:star-line-duotone'"
+                          width="18"
+                          height="18"
+                      />
+                      <span class="row-action-label">{{ t('star') }}</span>
+                    </div>
+                  </el-tooltip>
+                  <el-tooltip :content="t('delete')" placement="top" effect="dark">
+                    <div
+                        v-perm="'email:delete'"
+                        class="row-action-item"
+                        @click.stop="rowDelete(item)"
+                    >
+                      <Icon class="row-action-icon" icon="uiw:delete" width="15" height="15"/>
+                      <span class="row-action-label">{{ t('delete') }}</span>
+                    </div>
+                  </el-tooltip>
                 </div>
               </div>
             </div>

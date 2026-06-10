@@ -44,7 +44,7 @@
     <el-dialog
         v-model="dialogVisible"
         :title="form.filterRuleId ? $t('editFilter') : $t('newFilter')"
-        width="520px"
+        :width="dialogWidth"
         append-to-body
         top="12vh"
         :close-on-click-modal="false"
@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import {onMounted, reactive, ref} from 'vue';
+import {onMounted, reactive, ref, computed, onUnmounted} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {useFilterStore} from '@/store/filter.js';
@@ -115,6 +115,17 @@ const labelStore = useLabelStore();
 const dialogVisible = ref(false);
 const submitting = ref(false);
 const form = reactive(emptyForm());
+
+const winWidth = ref(window.innerWidth);
+function onResize() { winWidth.value = window.innerWidth; }
+onMounted(() => {
+  window.addEventListener('resize', onResize);
+  filterStore.fetch(true);
+  labelStore.fetch(true);
+});
+onUnmounted(() => window.removeEventListener('resize', onResize));
+
+const dialogWidth = computed(() => winWidth.value < 768 ? '92%' : '520px');
 
 function emptyForm() {
   return {
@@ -215,11 +226,6 @@ async function confirmDelete(row) {
   } catch (_) {}
 }
 
-onMounted(() => {
-  filterStore.fetch(true);
-  labelStore.fetch(true);
-});
-
 function openCreate(email) {
   Object.assign(form, emptyForm());
   if (email) {
@@ -242,6 +248,10 @@ defineExpose({ openCreate });
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 12px;
+    @media (max-width: 767px) {
+      flex-direction: column;
+      gap: 8px;
+    }
     .title {
       font-size: 16px;
       font-weight: 600;
@@ -256,6 +266,42 @@ defineExpose({ openCreate });
     text-align: center;
     color: #999;
     padding: 18px 0;
+  }
+}
+
+@media (max-width: 767px) {
+  :deep(.el-table) {
+    font-size: 12px;
+    display: block;
+    overflow-x: auto;
+  }
+  :deep(.el-table .cell) {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  :deep(.el-table th .cell),
+  :deep(.el-table td .cell) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  :deep(.el-dialog) {
+    width: 92% !important;
+    max-width: 100vw !important;
+    margin: 0 auto !important;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px 10px !important;
+  }
+  :deep(.el-form-item__label) {
+    font-size: 13px;
+  }
+  .header {
+    flex-direction: column;
+    gap: 8px;
+    .desc {
+      font-size: 11px;
+    }
   }
 }
 </style>

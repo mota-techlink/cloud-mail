@@ -43,7 +43,7 @@
       </el-select>
     </div>
     <div class="section-block">
-      <filterRules ref="filterRulesRef" />
+      <filterRules />
     </div>
     <div class="section-block">
       <signatures />
@@ -67,7 +67,7 @@
   </div>
 </template>
 <script setup>
-import {reactive, ref, defineOptions, onMounted} from 'vue'
+import {reactive, ref, defineOptions} from 'vue'
 import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
@@ -75,7 +75,6 @@ import {accountSetName} from "@/request/account.js";
 import {useAccountStore} from "@/store/account.js";
 import {useI18n} from "vue-i18n";
 import {useSettingStore} from "@/store/setting.js";
-import {useUiStore} from "@/store/ui.js";
 import filterRules from "@/components/filter-rules/index.vue";
 import signatures from "@/components/signatures/index.vue";
 
@@ -83,16 +82,10 @@ const { t } = useI18n()
 const accountStore = useAccountStore()
 const settingStore = useSettingStore()
 const userStore = useUserStore();
-const uiStore = useUiStore();
 const setPwdLoading = ref(false)
 const setNameShow = ref(false)
 const accountName = ref(null)
 const langSelect = ref(settingStore.lang)
-const filterRulesRef = ref(null)
-
-onMounted(() => {
-  uiStore.filterRulesRef = filterRulesRef.value
-})
 
 defineOptions({
   name: 'setting'

@@ -2,7 +2,7 @@
   <el-dialog
       v-model="visible"
       :title="dialogTitle"
-      width="460px"
+      :width="dialogWidth"
       top="15vh"
       append-to-body
       :z-index="3000"
@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import {ref, computed} from 'vue';
+import {ref, computed, onMounted, onUnmounted} from 'vue';
 import {Icon} from '@iconify/vue';
 import {useI18n} from 'vue-i18n';
 import {ElMessage, ElMessageBox} from 'element-plus';
@@ -103,6 +103,13 @@ const attachSelected = ref([]);
 const attachOnDone = ref(null);
 
 const swatches = ['#1890ff', '#13c2c2', '#52c41a', '#faad14', '#fa541c', '#f5222d', '#722ed1', '#eb2f96'];
+
+const winWidth = ref(window.innerWidth);
+function onResize() { winWidth.value = window.innerWidth; }
+onMounted(() => window.addEventListener('resize', onResize));
+onUnmounted(() => window.removeEventListener('resize', onResize));
+
+const dialogWidth = computed(() => winWidth.value < 768 ? '92%' : '460px');
 
 const dialogTitle = computed(() => {
   if (mode.value === 'create') return t('newLabel');
@@ -236,7 +243,7 @@ function goLabel(lab) {
 defineExpose({open});
 </script>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 .label-list {
   .empty {
     text-align: center;
@@ -258,10 +265,14 @@ defineExpose({open});
     .name {
       flex: 1;
       cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .actions {
       display: flex;
       gap: 10px;
+      flex-shrink: 0;
       .icon {
         cursor: pointer;
         color: #666;
@@ -302,6 +313,36 @@ defineExpose({open});
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
+}
+
+@media (max-width: 767px) {
+  :deep(.el-dialog) {
+    width: 92% !important;
+    max-width: 100vw !important;
+    top: 4vh !important;
+    margin: 0 auto !important;
+  }
+  :deep(.el-dialog__body) {
+    padding: 12px 10px !important;
+  }
+  .label-list .label-row {
+    padding: 6px 2px;
+    gap: 6px;
+    .name {
+      font-size: 13px;
+      max-width: 140px;
+    }
+  }
+  .color-row {
+    gap: 4px;
+    .swatch {
+      width: 20px;
+      height: 20px;
+    }
+  }
+  :deep(.el-form-item__label) {
+    font-size: 13px;
+  }
 }
 </style>
 

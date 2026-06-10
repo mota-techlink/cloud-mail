@@ -15,7 +15,9 @@ import {useSettingStore} from '@/store/setting.js'
 defineExpose({
   clearEditor,
   focus,
-  getContent
+  getContent,
+  insertContent,
+  replaceSignature
 })
 
 const props = defineProps({
@@ -165,6 +167,23 @@ function focus() {
 
 function getContent() {
   return editor.value.getContent()
+}
+
+function insertContent(content) {
+  if (editor.value) {
+    editor.value.insertContent(content, {format: 'html'});
+  }
+}
+
+function replaceSignature(htmlContent) {
+  if (!editor.value) return;
+  const dom = editor.value.dom;
+  // Remove any existing signature divs (replace, not append)
+  const existing = dom.select('div.email-signature');
+  existing.forEach(el => dom.remove(el));
+  // Insert new signature
+  const html = '<div class="email-signature">' + (htmlContent || '') + '</div>';
+  editor.value.insertContent(html, {format: 'html'});
 }
 
 

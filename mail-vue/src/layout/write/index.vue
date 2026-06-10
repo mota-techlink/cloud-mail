@@ -536,8 +536,10 @@ function open() {
   }
   signatureStore.fetch().then(() => {
     const def = signatureStore.defaultSignature;
-    if (def) {
-      nextTick(() => editor.value.insertContent && editor.value.insertContent(def.content));
+    if (def && editor.value) {
+      nextTick(() => {
+        editor.value.replaceSignature && editor.value.replaceSignature(def.content || '');
+      });
     }
   });
   show.value = true;
@@ -545,7 +547,7 @@ function open() {
 }
 
 function insertSignature(sig) {
-  editor.value.insertContent && editor.value.insertContent(sig.content);
+  editor.value.replaceSignature && editor.value.replaceSignature(sig.content || '');
 }
 
 function openDraft(draft) {

@@ -19,6 +19,7 @@
     </el-container>
   </el-container>
   <writer ref="writerRef" />
+  <filterRules ref="filterRulesRef" style="display:none" />
 </template>
 
 <script setup>
@@ -28,9 +29,11 @@ import Main from '@/layout/main/index.vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import {useUiStore} from "@/store/ui.js";
 import writer from '@/layout/write/index.vue'
+import filterRules from '@/components/filter-rules/index.vue'
 
 const uiStore = useUiStore();
 const writerRef = ref({})
+const filterRulesRef = ref(null)
 const isMobile = ref(window.innerWidth < 1025)
 const handleResize = () => {
   isMobile.value = window.innerWidth < 1025
@@ -39,6 +42,7 @@ const handleResize = () => {
 
 onMounted(() => {
   uiStore.writerRef = writerRef
+  uiStore.filterRulesRef = filterRulesRef
 
   window.addEventListener('resize', handleResize)
   handleResize()
