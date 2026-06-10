@@ -51,6 +51,26 @@ const routes = [
                     menu: true
                 }
             },
+            {
+                path: '/archive',
+                name: 'archive',
+                component: () => import('@/views/archive/index.vue'),
+                meta: {
+                    title: 'archive',
+                    name: 'archive',
+                    menu: true
+                }
+            },
+            {
+                path: '/label/:labelId',
+                name: 'label',
+                component: () => import('@/views/label/index.vue'),
+                meta: {
+                    title: 'label',
+                    name: 'label',
+                    menu: false
+                }
+            },
         ]
 
     },

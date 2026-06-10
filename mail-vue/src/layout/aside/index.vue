@@ -26,6 +26,45 @@
           <Icon icon="solar:star-line-duotone" width="20" height="20" />
           <span class="menu-name" style="margin-left: 21px">{{$t('starred')}}</span>
         </el-menu-item>
+        <el-menu-item @click="router.push({name: 'archive'})" index="archive"
+                      :class="route.meta.name === 'archive' ? 'choose-item' : ''">
+          <Icon icon="hugeicons:archive-01" width="20" height="20" />
+          <span class="menu-name" style="margin-left: 21px">{{$t('archive')}}</span>
+        </el-menu-item>
+        <div class="labels-group">
+          <div class="labels-header" @click="labelsOpen = !labelsOpen">
+            <Icon :icon="labelsOpen ? 'ep:arrow-down' : 'ep:arrow-right'" width="14" height="14" />
+            <span class="labels-title">{{ $t('labels') }}</span>
+          </div>
+          <div v-show="labelsOpen" class="labels-list">
+            <div
+                v-for="lab in labelStore.labels"
+                :key="lab.labelId"
+                class="label-item"
+                :class="String(route.params.labelId) === String(lab.labelId) ? 'choose-item' : ''"
+                :style="{ paddingLeft: (12 + (lab.depth || 0) * 16) + 'px' }"
+                @click="editLabel(lab)"
+            >
+              <span class="label-dot" :style="{ background: lab.color }"></span>
+              <span class="label-name">{{ lab.name }}</span>
+              <Icon
+                  class="label-go"
+                  icon="ep:arrow-right-bold"
+                  width="12"
+                  height="12"
+                  @click.stop="goLabelView(lab)"
+              />
+            </div>
+            <div class="label-item add-item" @click="openCreateDialog">
+              <Icon icon="ep:plus" width="14" height="14" />
+              <span class="label-name">{{ $t('newLabel') }}</span>
+            </div>
+            <div class="label-item add-item" v-if="labelStore.labels.length" @click="openManageDialog">
+              <Icon icon="ep:setting" width="14" height="14" />
+              <span class="label-name">{{ $t('manageLabels') }}</span>
+            </div>
+          </div>
+        </div>
         <el-menu-item @click="router.push({name: 'setting'})" index="setting"
                       :class="route.meta.name === 'setting' ? 'choose-item' : ''">
           <Icon icon="fluent:settings-48-regular" width="20" height="20" />
@@ -66,6 +105,7 @@
         </el-menu-item>
       </el-menu>
     </div>
+    <labelDialog ref="labelDialogRef" />
   </el-scrollbar>
 </template>
 
@@ -74,9 +114,35 @@ import router from "@/router/index.js";
 import { useRoute } from "vue-router";
 import {Icon} from "@iconify/vue";
 import {useSettingStore} from "@/store/setting.js";
+import {useLabelStore} from "@/store/label.js";
+import {onMounted, ref} from "vue";
+import labelDialog from "@/components/label-dialog/index.vue";
 
 const settingStore = useSettingStore();
+const labelStore = useLabelStore();
 const route = useRoute();
+const labelsOpen = ref(true);
+const labelDialogRef = ref(null);
+
+onMounted(() => {
+  labelStore.fetch().catch(() => {});
+});
+
+function openCreateDialog() {
+  labelDialogRef.value?.open('create');
+}
+
+function openManageDialog() {
+  labelDialogRef.value?.open('list');
+}
+
+function editLabel(lab) {
+  labelDialogRef.value?.open('edit', {label: lab});
+}
+
+function goLabelView(lab) {
+  router.push({name: 'label', params: {labelId: lab.labelId}});
+}
 
 </script>
 
@@ -148,6 +214,75 @@ const route = useRoute();
 
 .menu-name {
   user-select: none;
+}
+
+.labels-group {
+  margin: 8px 10px 0;
+  color: #fff;
+  .labels-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    user-select: none;
+    .labels-title {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+  }
+  .labels-header:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .labels-list {
+    .label-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      margin: 2px 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      .label-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .label-name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+      .label-go {
+        opacity: 0;
+        color: #fff;
+        flex-shrink: 0;
+        transition: opacity 0.15s ease-in-out;
+      }
+    }
+    @media (hover: hover) {
+      .label-item:hover .label-go {
+        opacity: 0.7;
+      }
+      .label-item .label-go:hover {
+        opacity: 1;
+      }
+    }
+    .label-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .label-item.choose-item {
+      background: rgba(255, 255, 255, 0.12);
+      font-weight: bold;
+    }
+    .add-item {
+      opacity: 0.85;
+    }
+  }
 }
 
 

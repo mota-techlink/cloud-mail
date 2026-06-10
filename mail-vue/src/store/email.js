@@ -5,6 +5,7 @@ export const useEmailStore = defineStore('email', {
         deleteIds: 0,
         starScroll: null,
         emailScroll: null,
+        archiveScroll: null,
         cancelStarEmailId: 0,
         addStarEmailId: 0,
         contentData: {
@@ -12,7 +13,9 @@ export const useEmailStore = defineStore('email', {
             delType: null,
             showStar: true,
             showReply: true,
-            showUnread: false
+            showUnread: false,
+            showArchive: true,
+            archived: 0
         },
         sendScroll: null,
     }),

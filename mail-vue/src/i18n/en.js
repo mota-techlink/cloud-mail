@@ -336,7 +336,31 @@ const en = {
     searchUser: 'Search by user',
     searchEmail: 'Search by Email',
     searchSender: 'Search by Sender',
-    userEmail: 'Email Address'
+    userEmail: 'Email Address',
+    archive: 'Archive',
+    archived: 'Archived',
+    unarchive: 'Unarchive',
+    archiveSuccess: 'Archived',
+    unarchiveSuccess: 'Unarchived',
+    archiveConfirmMsg: 'Archive selected emails?',
+    unarchiveConfirmMsg: 'Unarchive selected emails?',
+    labels: 'Labels',
+    newLabel: 'New Label',
+    editLabel: 'Edit Label',
+    deleteLabel: 'Delete Label',
+    labelName: 'Name',
+    labelColor: 'Color',
+    addLabel: 'Add Label',
+    labelEmpty: 'No labels yet',
+    labelDeleteConfirmMsg: 'Deleting a label will remove all associations. Continue?',
+    labelNotExist: 'Label not found',
+    labelNameRequired: 'Label name is required',
+    labelParent: 'Parent label',
+    labelParentNone: 'None (root)',
+    labelAttachTitle: 'Apply labels',
+    labelAttachSuccess: 'Labels applied',
+    labelAttach: 'Apply labels',
+    manageLabels: 'Manage labels'
 }
 
 export default en

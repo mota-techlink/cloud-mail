@@ -18,6 +18,15 @@
         <Icon v-perm="'email:delete'" class="icon delete" icon="fluent:mail-read-20-regular" width="21" height="21"
               v-if="getSelectedMailsIds().length > 0 && showUnread"
               @click="handleRead"/>
+        <Icon class="icon" icon="hugeicons:archive-01" width="20" height="20"
+              v-if="getSelectedMailsIds().length > 0 && ['email','send','star','label'].includes(props.type)"
+              @click="bulkArchive"/>
+        <Icon class="icon" icon="hugeicons:archive-02" width="20" height="20"
+              v-if="getSelectedMailsIds().length > 0 && props.type === 'archive'"
+              @click="bulkUnarchive"/>
+        <Icon class="icon" icon="mdi:label-outline" width="20" height="20"
+              v-if="getSelectedMailsIds().length > 0"
+              @click="openBulkLabelDialog"/>
       </div>
 
       <div class="header-right">
@@ -88,6 +97,10 @@
                           {{ item.subject || '\u200B' }}
                         </slot>
                       </span>
+                      <span class="label-pills" v-if="item.labels && item.labels.length">
+                        <span class="label-pill" v-for="lab in item.labels.slice(0, 3)" :key="lab.labelId" :style="{ background: lab.color }">{{ lab.name }}</span>
+                        <span class="label-pill more" v-if="item.labels.length > 3">+{{ item.labels.length - 3 }}</span>
+                      </span>
                     </span>
                     <span class="email-content">{{ item.formatText || '\u200B' }}</span>
                   </div>
@@ -109,6 +122,78 @@
               </div>
               <div class="email-right" :style="showUserInfo ? 'align-self: start;':''">
                 <span class="email-time" :style="(item.unread === EmailUnreadEnum.UNREAD && showUnread) ? 'font-weight: bold' : ''">{{ item.formatCreateTime }}</span>
+                <div class="email-row-actions" @click.stop>
+                  <Icon
+                      v-if="showUnread && item.unread === EmailUnreadEnum.UNREAD"
+                      class="row-action-icon"
+                      icon="fluent:mail-read-20-regular"
+                      width="18"
+                      height="18"
+                      :title="t('markAsRead')"
+                      @click.stop="rowMarkRead(item)"
+                  />
+                  <Icon
+                      v-if="['email','send','star','label'].includes(props.type)"
+                      class="row-action-icon"
+                      icon="hugeicons:archive-01"
+                      width="18"
+                      height="18"
+                      :title="t('archive')"
+                      @click.stop="archiveEmail(item)"
+                  />
+                  <Icon
+                      v-if="props.type === 'archive'"
+                      class="row-action-icon"
+                      icon="hugeicons:archive-02"
+                      width="18"
+                      height="18"
+                      :title="t('unarchive')"
+                      @click.stop="unarchiveEmail(item)"
+                  />
+                  <el-popover placement="bottom-end" trigger="click" :width="220" v-if="labelStore.labels.length">
+                    <template #reference>
+                      <Icon
+                          class="row-action-icon"
+                          icon="mdi:label-outline"
+                          width="18"
+                          height="18"
+                          :title="t('labels')"
+                          @click.stop
+                      />
+                    </template>
+                    <div class="label-checkbox-list">
+                      <div
+                          v-for="lab in labelStore.labels"
+                          :key="lab.labelId"
+                          class="label-checkbox-row"
+                          :style="{ paddingLeft: (4 + (lab.depth || 0) * 14) + 'px' }"
+                          @click.stop="toggleLabel(item, lab)"
+                      >
+                        <el-checkbox :model-value="emailHasLabel(item, lab.labelId)" @click.stop="toggleLabel(item, lab)" />
+                        <span class="dot" :style="{ background: lab.color }"></span>
+                        <span class="name">{{ lab.name }}</span>
+                      </div>
+                    </div>
+                  </el-popover>
+                  <Icon
+                      v-if="showStar"
+                      class="row-action-icon"
+                      :icon="item.isStar ? 'fluent-color:star-16' : 'solar:star-line-duotone'"
+                      width="18"
+                      height="18"
+                      :title="t('star')"
+                      @click.stop="starChange(item)"
+                  />
+                  <Icon
+                      v-perm="'email:delete'"
+                      class="row-action-icon"
+                      icon="uiw:delete"
+                      width="15"
+                      height="15"
+                      :title="t('delete')"
+                      @click.stop="rowDelete(item)"
+                  />
+                </div>
               </div>
             </div>
             <skeletonBlock v-else-if="item.expand === 'loading'"
@@ -219,6 +304,46 @@
               </div>
             </template>
           </el-dropdown-item>
+          <el-dropdown-item v-if="['email','send', 'star','label'].includes(props.type)" @click="archiveEmail(rightClickEmail)">
+            <template #default>
+              <div class="right-dropdown-item">
+                <Icon icon="hugeicons:archive-01" width="19" height="19"/>
+                <span>{{t('archive')}}</span>
+              </div>
+            </template>
+          </el-dropdown-item>
+          <el-dropdown-item v-if="props.type === 'archive'" @click="unarchiveEmail(rightClickEmail)">
+            <template #default>
+              <div class="right-dropdown-item">
+                <Icon icon="hugeicons:archive-02" width="19" height="19"/>
+                <span>{{t('unarchive')}}</span>
+              </div>
+            </template>
+          </el-dropdown-item>
+          <el-dropdown-item v-if="labelStore.labels.length" @click.stop="">
+            <template #default>
+              <el-popover placement="right-start" trigger="hover" :width="200">
+                <template #reference>
+                  <div class="right-dropdown-item">
+                    <Icon icon="mdi:label-outline" width="19" height="19"/>
+                    <span>{{t('labels')}}</span>
+                  </div>
+                </template>
+                <div class="label-checkbox-list">
+                  <div
+                      v-for="lab in labelStore.labels"
+                      :key="lab.labelId"
+                      class="label-checkbox-row"
+                      @click="toggleLabel(rightClickEmail, lab)"
+                  >
+                    <el-checkbox :model-value="emailHasLabel(rightClickEmail, lab.labelId)" @click.stop="toggleLabel(rightClickEmail, lab)" />
+                    <span class="dot" :style="{ background: lab.color }"></span>
+                    <span class="name">{{ lab.name }}</span>
+                  </div>
+                </div>
+              </el-popover>
+            </template>
+          </el-dropdown-item>
           <el-dropdown-item @click="rightDelete(rightClickEmail.emailId)">
             <template #default>
               <div class="right-dropdown-item">
@@ -230,16 +355,19 @@
         </el-dropdown-menu>
       </template>
     </el-dropdown>
+    <labelDialog ref="labelDialogRef" />
   </div>
 </template>
 
 <script setup>
 import {Icon} from "@iconify/vue";
 import skeletonBlock from "@/components/email-scroll/skeleton/index.vue"
+import labelDialog from "@/components/label-dialog/index.vue"
 import {computed, onActivated, reactive, ref, watch, nextTick, onMounted, onUnmounted } from "vue";
 import {useEmailStore} from "@/store/email.js";
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
+import {useLabelStore} from "@/store/label.js";
 import {sleep} from "@/utils/time-utils.js"
 import {fromNow} from "@/utils/day.js";
 import {useI18n} from "vue-i18n";
@@ -251,6 +379,8 @@ const props = defineProps({
   getEmailList: Function,
   emailDelete: Function,
   emailRead: Function,
+  emailArchive: Function,
+  emailUnarchive: Function,
   starAdd: Function,
   starCancel: Function,
   cancelSuccess: Function,
@@ -302,6 +432,7 @@ const {t} = useI18n()
 const settingStore = useSettingStore()
 const uiStore = useUiStore();
 const emailStore = useEmailStore();
+const labelStore = useLabelStore();
 const loading = ref(false);
 const followLoading = ref(false);
 const noLoading = ref(false);
@@ -667,6 +798,135 @@ function handleSearch(type, value) {
   emit('right-search', type, value);
 }
 
+function archiveEmail(email) {
+  if (!props.emailArchive) {
+    import('@/request/email.js').then(({emailArchive}) => doArchive(email, emailArchive));
+    return;
+  }
+  doArchive(email, props.emailArchive);
+}
+
+function doArchive(email, archiveFn) {
+  archiveFn([email.emailId]).then(() => {
+    ElMessage({message: t('archiveSuccess'), type: 'success', plain: true});
+    deleteEmail([email.emailId]);
+  });
+}
+
+function unarchiveEmail(email) {
+  if (!props.emailUnarchive) {
+    import('@/request/email.js').then(({emailUnarchive}) => doUnarchive(email, emailUnarchive));
+    return;
+  }
+  doUnarchive(email, props.emailUnarchive);
+}
+
+function doUnarchive(email, fn) {
+  fn([email.emailId]).then(() => {
+    ElMessage({message: t('unarchiveSuccess'), type: 'success', plain: true});
+    deleteEmail([email.emailId]);
+  });
+}
+
+function rowMarkRead(email) {
+  if (!email || !email.emailId) return;
+  if (email.unread !== EmailUnreadEnum.UNREAD) return;
+  emailRead(email.emailId);
+}
+
+function rowDelete(email) {
+  if (!email || !email.emailId) return;
+  ElMessageBox.confirm(t('delOneEmailConfirm') || t('delEmailsConfirm'), {
+    confirmButtonText: t('confirm'),
+    cancelButtonText: t('cancel'),
+    type: 'warning'
+  }).then(() => {
+    props.emailDelete([email.emailId]).then(() => {
+      ElMessage({message: t('delSuccessMsg'), type: 'success', plain: true});
+      emailStore.deleteIds = [email.emailId];
+    });
+  }).catch(() => {});
+}
+
+const labelDialogRef = ref(null);
+
+function bulkArchive() {
+  const ids = getSelectedMailsIds();
+  if (!ids.length) return;
+  ElMessageBox.confirm(t('archiveConfirmMsg'), {
+    confirmButtonText: t('confirm'),
+    cancelButtonText: t('cancel'),
+    type: 'warning'
+  }).then(async () => {
+    const fn = props.emailArchive || (await import('@/request/email.js')).emailArchive;
+    fn(ids).then(() => {
+      ElMessage({message: t('archiveSuccess'), type: 'success', plain: true});
+      deleteEmail(ids);
+    });
+  });
+}
+
+function bulkUnarchive() {
+  const ids = getSelectedMailsIds();
+  if (!ids.length) return;
+  ElMessageBox.confirm(t('unarchiveConfirmMsg'), {
+    confirmButtonText: t('confirm'),
+    cancelButtonText: t('cancel'),
+    type: 'warning'
+  }).then(async () => {
+    const fn = props.emailUnarchive || (await import('@/request/email.js')).emailUnarchive;
+    fn(ids).then(() => {
+      ElMessage({message: t('unarchiveSuccess'), type: 'success', plain: true});
+      deleteEmail(ids);
+    });
+  });
+}
+
+function openBulkLabelDialog() {
+  const ids = getSelectedMailsIds();
+  if (!ids.length) return;
+  labelDialogRef.value?.open('attach', {
+    emailIds: ids,
+    onDone: (labelIds) => {
+      const labelObjs = labelIds.map(id => {
+        const f = labelStore.findById(id);
+        return f ? {labelId: f.labelId, name: f.name, color: f.color} : null;
+      }).filter(Boolean);
+      emailList.forEach(item => {
+        if (ids.includes(item.emailId)) {
+          const existing = item.labels || [];
+          const seen = new Set(existing.map(l => l.labelId));
+          labelObjs.forEach(lo => {
+            if (!seen.has(lo.labelId)) existing.push(lo);
+          });
+          item.labels = existing;
+        }
+      });
+    }
+  });
+}
+
+function emailHasLabel(email, labelId) {
+  if (!email || !email.labels) return false;
+  return email.labels.some(l => l.labelId === labelId);
+}
+
+async function toggleLabel(email, lab) {
+  if (!email || !email.emailId) return;
+  const current = (email.labels || []).map(l => l.labelId);
+  let next;
+  if (current.includes(lab.labelId)) {
+    next = current.filter(id => id !== lab.labelId);
+  } else {
+    next = [...current, lab.labelId];
+  }
+  await labelStore.setEmailLabels(email.emailId, next);
+  email.labels = next.map(id => {
+    const found = labelStore.labels.find(l => l.labelId === id);
+    return found ? {labelId: found.labelId, name: found.name, color: found.color} : null;
+  }).filter(Boolean);
+}
+
 async function copyCode(code) {
   try {
     await navigator.clipboard.writeText(code);
@@ -913,6 +1173,58 @@ function loadData() {
 
 </script>
 <style lang="scss" scoped>
+
+.label-pills {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.label-pill {
+  display: inline-block;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 8px;
+  color: #fff;
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.label-pill.more {
+  background: #999;
+}
+
+.label-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.label-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .name {
+    font-size: 13px;
+  }
+}
+.label-checkbox-row:hover {
+  background: #f5f5f5;
+}
 
 .email-container {
   display: grid;
@@ -1220,8 +1532,35 @@ function loadData() {
     white-space: nowrap;
     display: flex;
     padding-left: 15px;
+    padding-right: 15px;
     align-items: center;
+    gap: 10px;
+    position: relative;
     @media (max-width: 1366px) {
+      display: none;
+    }
+  }
+
+  .email-row-actions {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    .row-action-icon {
+      cursor: pointer;
+      color: var(--el-text-color-primary);
+      opacity: 0.7;
+    }
+    .row-action-icon:hover {
+      opacity: 1;
+      color: var(--el-color-primary);
+    }
+  }
+
+  @media (hover: hover) {
+    &:hover .email-row-actions {
+      display: flex;
+    }
+    &:hover .email-time {
       display: none;
     }
   }

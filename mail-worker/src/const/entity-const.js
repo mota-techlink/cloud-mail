@@ -148,3 +148,8 @@ export const isDel = {
 	DELETE: 1,
 	NORMAL: 0
 }
+
+export const archivedConst = {
+	NORMAL: 0,
+	ARCHIVED: 1
+}

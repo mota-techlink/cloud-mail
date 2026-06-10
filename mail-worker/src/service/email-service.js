@@ -1,6 +1,6 @@
 import orm from '../entity/orm';
 import email from '../entity/email';
-import { attConst, emailConst, isDel, settingConst } from '../const/entity-const';
+import { archivedConst, attConst, emailConst, isDel, settingConst } from '../const/entity-const';
 import { and, desc, eq, gt, inArray, lt, count, asc, sql, ne, or, like, lte, gte } from 'drizzle-orm';
 import { star } from '../entity/star';
 import settingService from './setting-service';
@@ -15,6 +15,7 @@ import userService from './user-service';
 import roleService from './role-service';
 import user from '../entity/user';
 import starService from './star-service';
+import labelService from './label-service';
 import dayjs from 'dayjs';
 import kvConst from '../const/kv-const';
 import { t } from '../i18n/i18n'
@@ -77,6 +78,7 @@ const emailService = {
 					timeSort ? gt(email.emailId, emailId) : lt(email.emailId, emailId),
 					eq(email.type, type),
 					eq(email.isDel, isDel.NORMAL),
+					eq(email.archived, archivedConst.NORMAL),
 					eq(account.isDel, isDel.NORMAL)
 				)
 			);
@@ -100,6 +102,7 @@ const emailService = {
 					eq(email.userId, userId),
 					eq(email.type, type),
 					eq(email.isDel, isDel.NORMAL),
+					eq(email.archived, archivedConst.NORMAL),
 					eq(account.isDel, isDel.NORMAL)
 				)
 		).get();
@@ -109,7 +112,8 @@ const emailService = {
 				allReceive ? eq(1,1) : eq(email.accountId, accountId),
 				eq(email.userId, userId),
 				eq(email.type, type),
-				eq(email.isDel, isDel.NORMAL)
+				eq(email.isDel, isDel.NORMAL),
+				eq(email.archived, archivedConst.NORMAL)
 			))
 			.orderBy(desc(email.emailId)).limit(1).get();
 
@@ -122,6 +126,7 @@ const emailService = {
 
 
 		await this.emailAddAtt(c, list);
+		await labelService.attachLabelsToList(c, list, userId);
 
 		if (!latestEmail) {
 			latestEmail = {
@@ -719,6 +724,7 @@ const emailService = {
 					gt(email.emailId, emailId),
 					eq(email.userId, userId),
 					eq(email.isDel, isDel.NORMAL),
+					eq(email.archived, archivedConst.NORMAL),
 					eq(account.isDel, isDel.NORMAL),
 					allReceive ? eq(1,1) : eq(email.accountId, accountId),
 					eq(email.type, emailConst.type.RECEIVE)
@@ -727,6 +733,7 @@ const emailService = {
 			.limit(20);
 
 		await this.emailAddAtt(c, list);
+		await labelService.attachLabelsToList(c, list, userId);
 
 		return list;
 	},
@@ -736,6 +743,7 @@ const emailService = {
 		emailIds = emailIds.split(',').map(Number);
 		await attService.removeByEmailIds(c, emailIds);
 		await starService.removeByEmailIds(c, emailIds);
+		await labelService.removeByEmailIds(c, emailIds);
 		await orm(c).delete(email).where(inArray(email.emailId, emailIds)).run();
 	},
 
@@ -869,6 +877,7 @@ const emailService = {
 		let [list, totalRow, latestEmail] = await Promise.all([listQuery, totalQuery, latestEmailQuery]);
 
 		await this.emailAddAtt(c, list);
+		await labelService.attachLabelsToList(c, list, null);
 
 		if (!latestEmail) {
 			latestEmail = {
@@ -974,6 +983,7 @@ const emailService = {
 		}
 
 		await attService.removeByEmailIds(c, emailIds);
+		await labelService.removeByEmailIds(c, emailIds);
 
 		await orm(c).delete(email).where(conditions.length > 1 ? and(...conditions) : conditions[0]).run();
 	},
@@ -986,6 +996,78 @@ const emailService = {
 	async read(c, params, userId) {
 		const { emailIds } = params;
 		await orm(c).update(email).set({ unread: emailConst.unread.READ }).where(and(eq(email.userId, userId), inArray(email.emailId, emailIds)));
+	},
+
+	async archive(c, params, userId) {
+		const { emailIds } = params;
+		if (!Array.isArray(emailIds) || emailIds.length === 0) return;
+		const ids = emailIds.map(Number);
+		await orm(c).update(email).set({ archived: archivedConst.ARCHIVED })
+			.where(and(eq(email.userId, userId), inArray(email.emailId, ids))).run();
+	},
+
+	async unarchive(c, params, userId) {
+		const { emailIds } = params;
+		if (!Array.isArray(emailIds) || emailIds.length === 0) return;
+		const ids = emailIds.map(Number);
+		await orm(c).update(email).set({ archived: archivedConst.NORMAL })
+			.where(and(eq(email.userId, userId), inArray(email.emailId, ids))).run();
+	},
+
+	async archiveList(c, params, userId) {
+		let { emailId, size, accountId, timeSort, allReceive } = params;
+		size = Number(size);
+		emailId = Number(emailId);
+		timeSort = Number(timeSort);
+		accountId = Number(accountId);
+		allReceive = Number(allReceive);
+
+		if (!size || size > 50) size = 50;
+
+		if (!emailId) {
+			emailId = timeSort ? 0 : 9999999999;
+		}
+
+		if (isNaN(allReceive)) {
+			allReceive = 1;
+		}
+
+		const conds = [
+			eq(email.userId, userId),
+			eq(email.isDel, isDel.NORMAL),
+			eq(email.archived, archivedConst.ARCHIVED),
+			timeSort ? gt(email.emailId, emailId) : lt(email.emailId, emailId),
+		];
+		if (!allReceive && accountId) {
+			conds.push(eq(email.accountId, accountId));
+		}
+
+		const query = orm(c)
+			.select({ ...email, starId: star.starId })
+			.from(email)
+			.leftJoin(star, and(eq(star.emailId, email.emailId), eq(star.userId, userId)))
+			.where(and(...conds));
+
+		if (timeSort) {
+			query.orderBy(asc(email.emailId));
+		} else {
+			query.orderBy(desc(email.emailId));
+		}
+
+		let list = await query.limit(size).all();
+		list = list.map(item => ({ ...item, isStar: item.starId != null ? 1 : 0 }));
+		await this.emailAddAtt(c, list);
+		await labelService.attachLabelsToList(c, list, userId);
+
+		const totalRow = await orm(c).select({ total: count() }).from(email)
+			.where(and(
+				eq(email.userId, userId),
+				eq(email.isDel, isDel.NORMAL),
+				eq(email.archived, archivedConst.ARCHIVED),
+				(!allReceive && accountId) ? eq(email.accountId, accountId) : eq(1, 1)
+			)).get();
+
+		return { list, total: totalRow.total, latestEmail: { emailId: 0, accountId: accountId || 0, userId } };
 	}
 };
 

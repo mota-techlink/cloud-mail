@@ -24,3 +24,15 @@ export function emailSend(form,progress) {
         noMsg: true
     })
 }
+
+export function emailArchive(emailIds) {
+    return http.put('/email/archive', {emailIds})
+}
+
+export function emailUnarchive(emailIds) {
+    return http.put('/email/unarchive', {emailIds})
+}
+
+export function archiveList(accountId, allReceive, emailId, timeSort, size) {
+    return http.get('/email/archive/list', {params: {accountId, allReceive, emailId, timeSort, size}})
+}

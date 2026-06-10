@@ -9,6 +9,15 @@
       </span>
       <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="la:reply" width="21" height="21" />
       <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
+      <Icon class="icon" v-if="emailStore.contentData.showArchive && !email.archived" icon="hugeicons:archive-01" width="20" height="20" @click="handleArchive"/>
+      <Icon class="icon" v-if="emailStore.contentData.showArchive && email.archived" icon="hugeicons:archive-02" width="20" height="20" @click="handleUnarchive"/>
+      <el-button class="label-btn" size="small" @click="openLabelDialog">
+        <Icon icon="mdi:label-plus-outline" width="16" height="16" style="margin-right:4px"/>
+        <span>{{ $t('labels') }}</span>
+      </el-button>
+      <span class="content-label-pills" v-if="email.labels && email.labels.length">
+        <span class="label-pill" v-for="lab in email.labels" :key="lab.labelId" :style="{ background: lab.color }">{{ lab.name }}</span>
+      </span>
     </div>
     <div></div>
     <el-scrollbar class="scrollbar">
@@ -71,14 +80,16 @@
         show-progress
         @close="showPreview = false"
     />
+    <labelDialog ref="labelDialogRef" />
   </div>
 </template>
 <script setup>
 import ShadowHtml from '@/components/shadow-html/index.vue'
+import labelDialog from '@/components/label-dialog/index.vue'
 import {reactive, ref, watch, onMounted, onUnmounted} from "vue";
 import {useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {emailDelete, emailRead} from "@/request/email.js";
+import {emailDelete, emailRead, emailArchive, emailUnarchive} from "@/request/email.js";
 import {Icon} from "@iconify/vue";
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
@@ -92,6 +103,25 @@ import {allEmailDelete} from "@/request/all-email.js";
 import {useUiStore} from "@/store/ui.js";
 import {useI18n} from "vue-i18n";
 import {EmailUnreadEnum} from "@/enums/email-enum.js";
+import {useLabelStore} from "@/store/label.js";
+
+const labelStore = useLabelStore();
+const labelDialogRef = ref(null);
+
+function openLabelDialog() {
+  labelStore.fetch().catch(() => {});
+  const currentIds = (email.labels || []).map(l => l.labelId);
+  labelDialogRef.value?.open('attach', {
+    emailIds: [email.emailId],
+    preselectedLabelIds: currentIds,
+    onDone: (labelIds) => {
+      email.labels = labelIds.map(id => {
+        const f = labelStore.findById(id);
+        return f ? {labelId: f.labelId, name: f.name, color: f.color} : null;
+      }).filter(Boolean);
+    }
+  });
+}
 
 const uiStore = useUiStore();
 const settingStore = useSettingStore();
@@ -124,6 +154,36 @@ function openReply() {
 
 function openForward() {
   uiStore.writerRef.openForward(email)
+}
+
+function handleArchive() {
+  ElMessageBox.confirm(t('archiveConfirmMsg'), {
+    confirmButtonText: t('confirm'),
+    cancelButtonText: t('cancel'),
+    type: 'warning'
+  }).then(() => {
+    emailArchive([email.emailId]).then(() => {
+      ElMessage({message: t('archiveSuccess'), type: 'success', plain: true});
+      email.archived = 1;
+      emailStore.deleteIds = [email.emailId];
+      handleBack();
+    });
+  });
+}
+
+function handleUnarchive() {
+  ElMessageBox.confirm(t('unarchiveConfirmMsg'), {
+    confirmButtonText: t('confirm'),
+    cancelButtonText: t('cancel'),
+    type: 'warning'
+  }).then(() => {
+    emailUnarchive([email.emailId]).then(() => {
+      ElMessage({message: t('unarchiveSuccess'), type: 'success', plain: true});
+      email.archived = 0;
+      emailStore.deleteIds = [email.emailId];
+      handleBack();
+    });
+  });
 }
 
 function toMessage(message) {
@@ -215,6 +275,24 @@ const handleDelete = () => {
 }
 </script>
 <style scoped lang="scss">
+
+.content-label-pills {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.label-pill {
+  display: inline-block;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 8px;
+  color: #fff;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .box {
   height: 100%;
   overflow: hidden;
@@ -235,6 +313,10 @@ const handleDelete = () => {
   }
   .icon {
     cursor: pointer;
+  }
+  .label-btn {
+    display: inline-flex;
+    align-items: center;
   }
 }
 
