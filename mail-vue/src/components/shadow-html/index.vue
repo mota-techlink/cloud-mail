@@ -5,7 +5,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
+import { useUiStore } from '@/store/ui.js'
+
+const uiStore = useUiStore()
 
 const props = defineProps({
   html: {
@@ -18,6 +21,21 @@ const container = ref(null)
 const contentBox = ref(null)
 let shadowRoot = null
 
+const themeStyles = () => {
+  if (uiStore.dark) {
+    return {
+      color: '#E8EAED',
+      background: '#1E1E1E',
+      linkColor: '#8AB4F8'
+    }
+  }
+  return {
+    color: '#13181D',
+    background: '#FFFFFF',
+    linkColor: '#0E70DF'
+  }
+}
+
 function updateContent() {
   if (!shadowRoot) return;
 
@@ -28,6 +46,8 @@ function updateContent() {
 
   // 2. 移除 <body> 标签（保留内容）
   const cleanedHtml = props.html.replace(/<\/?body[^>]*>/gi, '');
+
+  const t = themeStyles();
 
   // 3. 将 body 的 style 应用到 .shadow-content
   shadowRoot.innerHTML = `
@@ -40,7 +60,7 @@ function updateContent() {
                     'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         font-size: 14px;
         line-height: 1.5;
-        color: #13181D;
+        color: ${t.color};
         word-break: break-word;
       }
 
@@ -55,11 +75,11 @@ function updateContent() {
 
       a {
         text-decoration: none;
-        color: #0E70DF;
+        color: ${t.linkColor};
       }
 
       .shadow-content {
-        background: #FFFFFF;
+        background: ${t.background};
         width: fit-content;
         height: fit-content;
         min-width: 100%;
@@ -106,6 +126,11 @@ onMounted(() => {
 watch(() => props.html, () => {
   updateContent()
   autoScale()
+})
+
+watch(() => uiStore.dark, () => {
+  updateContent()
+  nextTick(() => autoScale())
 })
 </script>
 

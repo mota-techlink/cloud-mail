@@ -178,12 +178,17 @@ function insertContent(content) {
 function replaceSignature(htmlContent) {
   if (!editor.value) return;
   const dom = editor.value.dom;
-  // Remove any existing signature divs (replace, not append)
-  const existing = dom.select('div.email-signature');
-  existing.forEach(el => dom.remove(el));
-  // Insert new signature
-  const html = '<div class="email-signature">' + (htmlContent || '') + '</div>';
-  editor.value.insertContent(html, {format: 'html'});
+  // Find by unique ID — never touches anything outside the signature block
+  const existing = dom.select('#email-signature-block');
+  if (existing.length > 0) {
+    existing[0].innerHTML = htmlContent || '';
+  } else {
+    // First time: insert signature block at end
+    const sigHtml = '<div id="email-signature-block">' + (htmlContent || '') + '</div>';
+    editor.value.selection.select(editor.value.getBody(), true);
+    editor.value.selection.collapse(false);
+    editor.value.insertContent(sigHtml, {format: 'html'});
+  }
 }
 
 

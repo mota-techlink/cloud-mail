@@ -9,6 +9,13 @@ import analysisService from './service/analysis-service';
 export default {
 	 async fetch(req, env, ctx) {
 
+		// Force HTTPS redirect for all requests
+		if (req.headers.get('X-Forwarded-Proto') === 'http') {
+			const url = new URL(req.url);
+			url.protocol = 'https:';
+			return Response.redirect(url.toString(), 301);
+		}
+
 		const url = new URL(req.url)
 
 		if (url.pathname.startsWith('/api/')) {
@@ -21,7 +28,16 @@ export default {
 			 return await kvObjService.toObjResp( { env }, url.pathname.substring(1));
 		 }
 
-		return env.assets.fetch(req);
+		const assetResp = await env.assets.fetch(req);
+
+		// Prevent CF CDN from caching HTML (avoids cache-HIT blocking redirect updates)
+		const headers = new Headers(assetResp.headers);
+		headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+		return new Response(assetResp.body, {
+			status: assetResp.status,
+			statusText: assetResp.statusText,
+			headers
+		});
 	},
 	email: email,
 	async scheduled(c, env, ctx) {

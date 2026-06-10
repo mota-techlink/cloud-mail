@@ -1,24 +1,44 @@
 <template>
   <div class="box">
     <div class="header-actions">
-      <Icon class="icon" icon="material-symbols-light:arrow-back-ios-new" width="20" height="20" @click="handleBack"/>
-      <Icon v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
+      <el-tooltip :content="$t('back')" placement="bottom" effect="dark">
+        <Icon class="icon" icon="material-symbols-light:arrow-back-ios-new" width="20" height="20" @click="handleBack"/>
+      </el-tooltip>
+      <el-tooltip :content="$t('delete')" placement="bottom" effect="dark">
+        <Icon v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
+      </el-tooltip>
       <span class="star" v-if="emailStore.contentData.showStar">
-        <Icon class="icon" @click="changeStar" v-if="email.isStar" icon="fluent-color:star-16" width="20" height="20"/>
-        <Icon class="icon" @click="changeStar" v-else icon="solar:star-line-duotone" width="18" height="18"/>
+        <el-tooltip v-if="email.isStar" :content="$t('star')" placement="bottom" effect="dark">
+          <Icon class="icon" @click="changeStar" icon="fluent-color:star-16" width="20" height="20"/>
+        </el-tooltip>
+        <el-tooltip v-else :content="$t('star')" placement="bottom" effect="dark">
+          <Icon class="icon" @click="changeStar" icon="solar:star-line-duotone" width="18" height="18"/>
+        </el-tooltip>
       </span>
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="la:reply" width="21" height="21" />
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
-      <Icon class="icon" v-if="emailStore.contentData.showArchive && !email.archived" icon="hugeicons:archive-01" width="20" height="20" @click="handleArchive"/>
-      <Icon class="icon" v-if="emailStore.contentData.showArchive && email.archived" icon="hugeicons:archive-02" width="20" height="20" @click="handleUnarchive"/>
-      <el-button class="label-btn" size="small" @click="openLabelDialog">
-        <Icon icon="mdi:label-plus-outline" width="16" height="16" style="margin-right:4px"/>
-        <span>{{ $t('labels') }}</span>
-      </el-button>
-      <el-button class="label-btn" size="small" @click="openFilterRule">
-        <Icon icon="mdi:filter-plus" width="16" height="16" style="margin-right:4px"/>
-        <span>{{ $t('createRule') }}</span>
-      </el-button>
+      <el-tooltip :content="$t('reply')" placement="bottom" effect="dark">
+        <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="la:reply" width="21" height="21" />
+      </el-tooltip>
+      <el-tooltip :content="$t('forward')" placement="bottom" effect="dark">
+        <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
+      </el-tooltip>
+      <el-tooltip :content="$t('archive')" placement="bottom" effect="dark">
+        <Icon class="icon" v-if="emailStore.contentData.showArchive && !email.archived" icon="hugeicons:archive-01" width="20" height="20" @click="handleArchive"/>
+      </el-tooltip>
+      <el-tooltip :content="$t('unarchive')" placement="bottom" effect="dark">
+        <Icon class="icon" v-if="emailStore.contentData.showArchive && email.archived" icon="hugeicons:archive-02" width="20" height="20" @click="handleUnarchive"/>
+      </el-tooltip>
+      <el-tooltip :content="$t('labels')" placement="bottom" effect="dark">
+        <el-button class="label-btn" size="small" @click="openLabelDialog">
+          <Icon icon="mdi:label-plus-outline" width="16" height="16" style="margin-right:4px"/>
+          <span>{{ $t('labels') }}</span>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip :content="$t('createRule')" placement="bottom" effect="dark">
+        <el-button class="label-btn" size="small" @click="openFilterRule">
+          <Icon icon="mdi:filter-plus" width="16" height="16" style="margin-right:4px"/>
+          <span>{{ $t('createRule') }}</span>
+        </el-button>
+      </el-tooltip>
       <span class="content-label-pills" v-if="email.labels && email.labels.length">
         <span class="label-pill" v-for="lab in email.labels" :key="lab.labelId" :style="{ background: lab.color }">{{ lab.name }}</span>
       </span>

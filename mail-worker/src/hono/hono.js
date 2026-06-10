@@ -4,6 +4,16 @@ const app = new Hono();
 import result from '../model/result';
 import { cors } from 'hono/cors';
 
+// Force HTTPS redirect
+app.use('*', async (c, next) => {
+  if (c.req.header('X-Forwarded-Proto') === 'http') {
+    const url = new URL(c.req.url);
+    url.protocol = 'https:';
+    return c.redirect(url.toString(), 301);
+  }
+  await next();
+});
+
 app.use('*', cors());
 
 app.onError((err, c) => {

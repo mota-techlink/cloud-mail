@@ -11,26 +11,40 @@
       <div class="header-left" :style="'padding-left:' + actionLeft">
 
         <slot name="first"></slot>
-        <Icon class="icon reload" icon="ion:reload" width="18" height="18" @click="refresh"/>
-        <Icon v-perm="'email:delete'" class="icon delete" icon="uiw:delete" width="16" height="16"
-              v-if="getSelectedMailsIds().length > 0"
-              @click="handleDelete"/>
-        <Icon v-perm="'email:delete'" class="icon delete" icon="fluent:mail-read-20-regular" width="21" height="21"
-              v-if="getSelectedMailsIds().length > 0 && showUnread"
-              @click="handleRead"/>
-        <Icon class="icon" icon="hugeicons:archive-01" width="20" height="20"
-              v-if="getSelectedMailsIds().length > 0 && ['email','send','star','label'].includes(props.type)"
-              @click="bulkArchive"/>
-        <Icon class="icon" icon="hugeicons:archive-02" width="20" height="20"
-              v-if="getSelectedMailsIds().length > 0 && props.type === 'archive'"
-              @click="bulkUnarchive"/>
-        <Icon class="icon" icon="mdi:label-outline" width="20" height="20"
-              v-if="getSelectedMailsIds().length > 0"
-              @click="openBulkLabelDialog"/>
-        <Icon class="icon" icon="mdi:filter-plus" width="20" height="20"
-              v-if="['email','send','star','label'].includes(props.type)"
-              @click="openCreateRule"
-              :title="$t('createRule')"/>
+        <el-tooltip :content="$t('refresh')" placement="bottom" effect="dark">
+          <Icon class="icon reload" icon="ion:reload" width="18" height="18" @click="refresh"/>
+        </el-tooltip>
+        <el-tooltip :content="$t('delete')" placement="bottom" effect="dark">
+          <Icon v-perm="'email:delete'" class="icon delete" icon="uiw:delete" width="16" height="16"
+                v-if="getSelectedMailsIds().length > 0"
+                @click="handleDelete"/>
+        </el-tooltip>
+        <el-tooltip :content="$t('markAsRead')" placement="bottom" effect="dark">
+          <Icon v-perm="'email:delete'" class="icon delete" icon="fluent:mail-read-20-regular" width="21" height="21"
+                v-if="getSelectedMailsIds().length > 0 && showUnread"
+                @click="handleRead"/>
+        </el-tooltip>
+        <el-tooltip :content="$t('archive')" placement="bottom" effect="dark">
+          <Icon class="icon" icon="hugeicons:archive-01" width="20" height="20"
+                v-if="getSelectedMailsIds().length > 0 && ['email','send','star','label'].includes(props.type)"
+                @click="bulkArchive"/>
+        </el-tooltip>
+        <el-tooltip :content="$t('unarchive')" placement="bottom" effect="dark">
+          <Icon class="icon" icon="hugeicons:archive-02" width="20" height="20"
+                v-if="getSelectedMailsIds().length > 0 && props.type === 'archive'"
+                @click="bulkUnarchive"/>
+        </el-tooltip>
+        <el-tooltip :content="$t('labels')" placement="bottom" effect="dark">
+          <Icon class="icon" icon="mdi:label-outline" width="20" height="20"
+                v-if="getSelectedMailsIds().length > 0"
+                @click="openBulkLabelDialog"/>
+        </el-tooltip>
+        <el-tooltip :content="$t('createRule')" placement="bottom" effect="dark">
+          <Icon class="icon" icon="mdi:filter-plus" width="20" height="20"
+                v-if="['email','send','star','label'].includes(props.type)"
+                @click="openCreateRule"
+                :title="$t('createRule')"/>
+        </el-tooltip>
       </div>
 
       <div class="header-right">

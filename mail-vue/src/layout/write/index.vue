@@ -439,6 +439,7 @@ function resetForm() {
   backReply.subject = ''
   backReply.receiveEmail = []
   backReply.sendType = ''
+  defValue.value = ''
   editor.value.clearEditor()
 }
 
@@ -533,6 +534,12 @@ function open() {
     form.sendEmail = accountStore.currentAccount.email;
     form.accountId = accountStore.currentAccount.accountId;
     form.name = accountStore.currentAccount.name;
+  }
+  // New email: seed template with content area + signature block
+  if (!defValue.value) {
+    defValue.value = '<div><br><br><br><br><br><br></div><div id="email-signature-block"></div>';
+  } else if (!defValue.value.includes('id="email-signature-block"')) {
+    defValue.value += '<div id="email-signature-block"></div>';
   }
   signatureStore.fetch().then(() => {
     const def = signatureStore.defaultSignature;
