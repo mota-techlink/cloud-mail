@@ -40,6 +40,7 @@
         <span class="dot" :style="{ background: lab.color }"></span>
         <span class="name">{{ lab.name }}</span>
       </div>
+      <el-button class="add-btn" @click="openNestedCreate" plain>+ {{ $t('newLabel') }}</el-button>
       <div class="form-actions">
         <el-button @click="visible = false">{{ $t('cancel') }}</el-button>
         <el-button type="primary" @click="submitAttach" :loading="submitting" :disabled="!attachSelected.length">{{ $t('confirm') }}</el-button>
@@ -81,6 +82,53 @@
       </div>
     </div>
   </el-dialog>
+
+  <!-- Nested create-label dialog (二次弹窗) -->
+  <el-dialog
+      v-model="nestedVisible"
+      :title="$t('newLabel')"
+      :width="dialogWidth"
+      top="22vh"
+      append-to-body
+      :z-index="4000"
+      :close-on-click-modal="false"
+      destroy-on-close
+  >
+    <div class="label-form">
+      <el-form label-position="top">
+        <el-form-item :label="$t('labelName')">
+          <el-input v-model="nestedForm.name" maxlength="32" show-word-limit />
+        </el-form-item>
+        <el-form-item :label="$t('labelColor')">
+          <div class="color-row">
+            <span
+                class="swatch"
+                v-for="c in swatches"
+                :key="c"
+                :style="{ background: c, outline: nestedForm.color === c ? '2px solid #1890ff' : 'none' }"
+                @click="nestedForm.color = c"
+            ></span>
+            <el-color-picker v-model="nestedForm.color" teleported popper-class="label-dialog-popper" />
+          </div>
+        </el-form-item>
+        <el-form-item :label="$t('labelParent')">
+          <el-select v-model="nestedForm.parentId" teleported popper-class="label-dialog-popper" :placeholder="$t('labelParentNone')" clearable style="width: 100%">
+            <el-option :label="$t('labelParentNone')" :value="0" />
+            <el-option
+                v-for="opt in parentOptions"
+                :key="opt.labelId"
+                :label="indentName(opt)"
+                :value="opt.labelId"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div class="form-actions">
+        <el-button @click="nestedVisible = false">{{ $t('cancel') }}</el-button>
+        <el-button type="primary" @click="submitNestedCreate" :loading="nestingSubmitting">{{ $t('save') }}</el-button>
+      </div>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -101,6 +149,11 @@ const form = ref({labelId: null, name: '', color: '#1890ff', parentId: 0});
 const attachEmailIds = ref([]);
 const attachSelected = ref([]);
 const attachOnDone = ref(null);
+
+// Nested create dialog state
+const nestedVisible = ref(false);
+const nestedForm = ref({name: '', color: '#1890ff', parentId: 0});
+const nestingSubmitting = ref(false);
 
 const swatches = ['#1890ff', '#13c2c2', '#52c41a', '#faad14', '#fa541c', '#f5222d', '#722ed1', '#eb2f96'];
 
@@ -178,6 +231,29 @@ function toggleAttach(id) {
   const i = attachSelected.value.indexOf(id);
   if (i >= 0) attachSelected.value.splice(i, 1);
   else attachSelected.value.push(id);
+}
+
+function openNestedCreate() {
+  nestedForm.value = {name: '', color: '#1890ff', parentId: 0};
+  nestedVisible.value = true;
+}
+
+async function submitNestedCreate() {
+  if (!nestedForm.value.name.trim()) {
+    ElMessage.warning(t('labelNameRequired'));
+    return;
+  }
+  nestingSubmitting.value = true;
+  try {
+    const pid = Number(nestedForm.value.parentId) || 0;
+    await labelStore.add(nestedForm.value.name.trim(), nestedForm.value.color, pid);
+    ElMessage.success(t('saveSuccessMsg'));
+    nestedVisible.value = false;
+    // Refresh the label list in the attach view
+    labelStore.fetch(true);
+  } finally {
+    nestingSubmitting.value = false;
+  }
 }
 
 async function submit() {
