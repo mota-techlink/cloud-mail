@@ -30,8 +30,54 @@ const dbInit = {
 		await this.v2_9DB(c);
 		await this.v3_0DB(c);
 		await this.v3_1DB(c);
+		await this.v3_2DB(c);
 		await settingService.refresh(c);
 		return c.text('success');
+	},
+
+	async v3_2DB(c) {
+		try {
+			await c.env.db.prepare(`CREATE TABLE IF NOT EXISTS filter_rule (
+				filter_rule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER NOT NULL,
+				name TEXT NOT NULL,
+				field TEXT NOT NULL,
+				operator TEXT NOT NULL,
+				value TEXT NOT NULL,
+				action_type TEXT NOT NULL,
+				action_value TEXT DEFAULT '',
+				enabled INTEGER NOT NULL DEFAULT 1,
+				create_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+			);`).run();
+		} catch (e) {
+			console.warn(`跳过字段：${e.message}`);
+		}
+
+		try {
+			await c.env.db.prepare(`CREATE INDEX IF NOT EXISTS idx_filter_rule_user ON filter_rule(user_id, enabled);`).run();
+		} catch (e) {
+			console.warn(`跳过字段：${e.message}`);
+		}
+
+		try {
+			await c.env.db.prepare(`CREATE TABLE IF NOT EXISTS signature (
+				sig_id INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER NOT NULL,
+				name TEXT NOT NULL,
+				content TEXT NOT NULL DEFAULT '',
+				is_default INTEGER NOT NULL DEFAULT 0,
+				is_company INTEGER NOT NULL DEFAULT 0,
+				create_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+			);`).run();
+		} catch (e) {
+			console.warn(`跳过字段：${e.message}`);
+		}
+
+		try {
+			await c.env.db.prepare(`CREATE INDEX IF NOT EXISTS idx_signature_user ON signature(user_id, is_company);`).run();
+		} catch (e) {
+			console.warn(`跳过字段：${e.message}`);
+		}
 	},
 
 	async v3_1DB(c) {

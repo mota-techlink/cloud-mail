@@ -11,6 +11,7 @@ import roleService from '../service/role-service';
 import userService from '../service/user-service';
 import telegramService from '../service/telegram-service';
 import aiService from '../service/ai-service';
+import filterRuleService from '../service/filter-service';
 
 export async function email(message, env, ctx) {
 
@@ -145,6 +146,14 @@ export async function email(message, env, ctx) {
 		}
 
 		emailRow = await emailService.completeReceive({ env }, account ? emailConst.status.RECEIVE : emailConst.status.NOONE, emailRow.emailId);
+
+		if (account && emailRow.userId) {
+			try {
+				await filterRuleService.executeForEmail({ env }, emailRow, emailRow.userId);
+			} catch (e) {
+				console.error('filter execute error:', e);
+			}
+		}
 
 
 		if (ruleType === settingConst.ruleType.RULE) {

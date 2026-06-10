@@ -3,6 +3,9 @@
       v-model="visible"
       :title="dialogTitle"
       width="460px"
+      top="15vh"
+      append-to-body
+      :z-index="3000"
       :close-on-click-modal="false"
       destroy-on-close
   >
@@ -57,11 +60,11 @@
                 :style="{ background: c, outline: form.color === c ? '2px solid #1890ff' : 'none' }"
                 @click="form.color = c"
             ></span>
-            <el-color-picker v-model="form.color" />
+            <el-color-picker v-model="form.color" teleported popper-class="label-dialog-popper" />
           </div>
         </el-form-item>
         <el-form-item :label="$t('labelParent')">
-          <el-select v-model="form.parentId" :placeholder="$t('labelParentNone')" clearable style="width: 100%">
+          <el-select v-model="form.parentId" teleported popper-class="label-dialog-popper" :placeholder="$t('labelParentNone')" clearable style="width: 100%">
             <el-option :label="$t('labelParentNone')" :value="0" />
             <el-option
                 v-for="opt in parentOptions"
@@ -299,5 +302,11 @@ defineExpose({open});
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
+}
+</style>
+
+<style>
+.label-dialog-popper {
+  z-index: 4000 !important;
 }
 </style>

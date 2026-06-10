@@ -27,6 +27,10 @@
         <Icon class="icon" icon="mdi:label-outline" width="20" height="20"
               v-if="getSelectedMailsIds().length > 0"
               @click="openBulkLabelDialog"/>
+        <Icon class="icon" icon="mdi:filter-plus" width="20" height="20"
+              v-if="['email','send','star','label'].includes(props.type)"
+              @click="openCreateRule"
+              :title="$t('createRule')"/>
       </div>
 
       <div class="header-right">
@@ -123,43 +127,43 @@
               <div class="email-right" :style="showUserInfo ? 'align-self: start;':''">
                 <span class="email-time" :style="(item.unread === EmailUnreadEnum.UNREAD && showUnread) ? 'font-weight: bold' : ''">{{ item.formatCreateTime }}</span>
                 <div class="email-row-actions" @click.stop>
-                  <Icon
+                  <div
                       v-if="showUnread && item.unread === EmailUnreadEnum.UNREAD"
-                      class="row-action-icon"
-                      icon="fluent:mail-read-20-regular"
-                      width="18"
-                      height="18"
+                      class="row-action-item"
                       :title="t('markAsRead')"
                       @click.stop="rowMarkRead(item)"
-                  />
-                  <Icon
+                  >
+                    <Icon class="row-action-icon" icon="fluent:mail-read-20-regular" width="18" height="18"/>
+                    <span class="row-action-label">{{ t('markAsRead') }}</span>
+                  </div>
+                  <div
                       v-if="['email','send','star','label'].includes(props.type)"
-                      class="row-action-icon"
-                      icon="hugeicons:archive-01"
-                      width="18"
-                      height="18"
+                      class="row-action-item"
                       :title="t('archive')"
                       @click.stop="archiveEmail(item)"
-                  />
-                  <Icon
+                  >
+                    <Icon class="row-action-icon" icon="hugeicons:archive-01" width="18" height="18"/>
+                    <span class="row-action-label">{{ t('archive') }}</span>
+                  </div>
+                  <div
                       v-if="props.type === 'archive'"
-                      class="row-action-icon"
-                      icon="hugeicons:archive-02"
-                      width="18"
-                      height="18"
+                      class="row-action-item"
                       :title="t('unarchive')"
                       @click.stop="unarchiveEmail(item)"
-                  />
+                  >
+                    <Icon class="row-action-icon" icon="hugeicons:archive-02" width="18" height="18"/>
+                    <span class="row-action-label">{{ t('unarchive') }}</span>
+                  </div>
                   <el-popover placement="bottom-end" trigger="click" :width="220" v-if="labelStore.labels.length">
                     <template #reference>
-                      <Icon
-                          class="row-action-icon"
-                          icon="mdi:label-outline"
-                          width="18"
-                          height="18"
+                      <div
+                          class="row-action-item"
                           :title="t('labels')"
                           @click.stop
-                      />
+                      >
+                        <Icon class="row-action-icon" icon="mdi:label-outline" width="18" height="18"/>
+                        <span class="row-action-label">{{ t('labels') }}</span>
+                      </div>
                     </template>
                     <div class="label-checkbox-list">
                       <div
@@ -175,24 +179,29 @@
                       </div>
                     </div>
                   </el-popover>
-                  <Icon
+                  <div
                       v-if="showStar"
-                      class="row-action-icon"
-                      :icon="item.isStar ? 'fluent-color:star-16' : 'solar:star-line-duotone'"
-                      width="18"
-                      height="18"
+                      class="row-action-item"
                       :title="t('star')"
                       @click.stop="starChange(item)"
-                  />
-                  <Icon
+                  >
+                    <Icon
+                        class="row-action-icon"
+                        :icon="item.isStar ? 'fluent-color:star-16' : 'solar:star-line-duotone'"
+                        width="18"
+                        height="18"
+                    />
+                    <span class="row-action-label">{{ t('star') }}</span>
+                  </div>
+                  <div
                       v-perm="'email:delete'"
-                      class="row-action-icon"
-                      icon="uiw:delete"
-                      width="15"
-                      height="15"
+                      class="row-action-item"
                       :title="t('delete')"
                       @click.stop="rowDelete(item)"
-                  />
+                  >
+                    <Icon class="row-action-icon" icon="uiw:delete" width="15" height="15"/>
+                    <span class="row-action-label">{{ t('delete') }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -277,6 +286,14 @@
               <div class="right-dropdown-item">
                 <Icon icon="solar:star-line-duotone" width="19" height="19"/>
                 <span>{{t('star')}}</span>
+              </div>
+            </template>
+          </el-dropdown-item>
+          <el-dropdown-item v-if="['email','send','star'].includes(props.type)" @click="createFilterRule(rightClickEmail)">
+            <template #default>
+              <div class="right-dropdown-item">
+                <Icon icon="mdi:filter-plus" width="19" height="19"/>
+                <span>{{t('createFilter')}}</span>
               </div>
             </template>
           </el-dropdown-item>
@@ -368,6 +385,7 @@ import {useEmailStore} from "@/store/email.js";
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
 import {useLabelStore} from "@/store/label.js";
+import {useFilterStore} from "@/store/filter.js";
 import {sleep} from "@/utils/time-utils.js"
 import {fromNow} from "@/utils/day.js";
 import {useI18n} from "vue-i18n";
@@ -433,6 +451,7 @@ const settingStore = useSettingStore()
 const uiStore = useUiStore();
 const emailStore = useEmailStore();
 const labelStore = useLabelStore();
+const filterStore = useFilterStore();
 const loading = ref(false);
 const followLoading = ref(false);
 const noLoading = ref(false);
@@ -765,6 +784,15 @@ function localRead(emailIds) {
   })
 }
 
+function createFilterRule(email) {
+  filterStore.fetch(true);
+  uiStore.filterRulesRef?.openCreate(email);
+}
+
+function openCreateRule() {
+  filterStore.fetch(true);
+  uiStore.filterRulesRef?.openCreate(null);
+}
 function rightDelete(emailId) {
 
   if (props.type === 'all-email') {
@@ -1544,14 +1572,30 @@ function loadData() {
   .email-row-actions {
     display: none;
     align-items: center;
-    gap: 10px;
-    .row-action-icon {
+    gap: 12px;
+    flex-wrap: nowrap;
+    .row-action-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
       cursor: pointer;
       color: var(--el-text-color-primary);
-      opacity: 0.7;
+      opacity: 0.75;
+      white-space: nowrap;
+      line-height: 1;
     }
-    .row-action-icon:hover {
+    .row-action-item:hover {
       opacity: 1;
+      color: var(--el-color-primary);
+    }
+    .row-action-icon {
+      cursor: pointer;
+    }
+    .row-action-label {
+      font-size: 12px;
+      color: var(--el-text-color-regular);
+    }
+    .row-action-item:hover .row-action-label {
       color: var(--el-color-primary);
     }
   }
@@ -1563,6 +1607,13 @@ function loadData() {
     &:hover .email-time {
       display: none;
     }
+  }
+
+  &:hover .email-row-actions {
+    display: flex;
+  }
+  &:hover .email-time {
+    display: none;
   }
 
   .email-right-skeleton {

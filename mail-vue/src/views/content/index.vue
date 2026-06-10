@@ -15,6 +15,10 @@
         <Icon icon="mdi:label-plus-outline" width="16" height="16" style="margin-right:4px"/>
         <span>{{ $t('labels') }}</span>
       </el-button>
+      <el-button class="label-btn" size="small" @click="openFilterRule">
+        <Icon icon="mdi:filter-plus" width="16" height="16" style="margin-right:4px"/>
+        <span>{{ $t('createRule') }}</span>
+      </el-button>
       <span class="content-label-pills" v-if="email.labels && email.labels.length">
         <span class="label-pill" v-for="lab in email.labels" :key="lab.labelId" :style="{ background: lab.color }">{{ lab.name }}</span>
       </span>
@@ -121,6 +125,11 @@ function openLabelDialog() {
       }).filter(Boolean);
     }
   });
+}
+
+function openFilterRule() {
+  labelStore.fetch(true);
+  uiStore.filterRulesRef?.openCreate(email);
 }
 
 const uiStore = useUiStore();

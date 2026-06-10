@@ -21,4 +21,6 @@ import '../api/public-api'
 import '../api/telegram-api'
 import '../api/oauth-api'
 import '../api/label-api'
+import '../api/filter-api'
+import '../api/signature-api'
 export default app;

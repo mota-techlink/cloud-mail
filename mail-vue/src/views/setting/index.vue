@@ -42,6 +42,12 @@
         <el-option label="English" value="en" @pointerdown.prevent.stop="changeLang('en')"/>
       </el-select>
     </div>
+    <div class="section-block">
+      <filterRules ref="filterRulesRef" />
+    </div>
+    <div class="section-block">
+      <signatures />
+    </div>
     <div class="del-email" v-perm="'my:delete'">
       <div class="title">{{$t('deleteUser')}}</div>
       <div style="color: var(--regular-text-color);">
@@ -61,7 +67,7 @@
   </div>
 </template>
 <script setup>
-import {reactive, ref, defineOptions} from 'vue'
+import {reactive, ref, defineOptions, onMounted} from 'vue'
 import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
@@ -69,15 +75,24 @@ import {accountSetName} from "@/request/account.js";
 import {useAccountStore} from "@/store/account.js";
 import {useI18n} from "vue-i18n";
 import {useSettingStore} from "@/store/setting.js";
+import {useUiStore} from "@/store/ui.js";
+import filterRules from "@/components/filter-rules/index.vue";
+import signatures from "@/components/signatures/index.vue";
 
 const { t } = useI18n()
 const accountStore = useAccountStore()
 const settingStore = useSettingStore()
 const userStore = useUserStore();
+const uiStore = useUiStore();
 const setPwdLoading = ref(false)
 const setNameShow = ref(false)
 const accountName = ref(null)
 const langSelect = ref(settingStore.lang)
+const filterRulesRef = ref(null)
+
+onMounted(() => {
+  uiStore.filterRulesRef = filterRulesRef.value
+})
 
 defineOptions({
   name: 'setting'
@@ -211,6 +226,10 @@ function submitPwd() {
 
   @media (max-width: 767px) {
     padding: 30px 30px;
+  }
+
+  .section-block {
+    margin-top: 32px;
   }
 
   .update-pwd {

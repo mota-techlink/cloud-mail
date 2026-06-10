@@ -61,7 +61,23 @@
                     width="22" height="22"/>
             </div>
           </div>
-          <div>
+          <div class="footer-actions">
+            <el-dropdown v-if="signatureStore.items.length" @command="insertSignature">
+              <el-button size="small" type="default">
+                <Icon icon="mdi:signature-text" width="16" height="16" />
+                {{ $t('signature') }}
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="sig in signatureStore.items" :key="sig.sigId" :command="sig">
+                    {{ sig.name }}
+                    <el-tag size="small" type="info" v-if="sig.isCompany" style="margin-left:4px">{{ $t('company') }}</el-tag>
+                    <el-tag size="small" type="success" v-if="sig.isDefault" style="margin-left:4px">{{ $t('default') }}</el-tag>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <div style="flex:1"></div>
             <el-button type="primary" @click="sendEmail" v-if="form.sendType === 'reply'">{{ $t('reply') }}</el-button>
             <el-button type="primary" @click="sendEmail" v-else-if="form.sendType === 'forward'">{{ $t('forward') }}</el-button>
             <el-button type="primary" @click="sendEmail" v-else>{{ $t('send') }}</el-button>
@@ -108,6 +124,7 @@ import {toOssDomain} from "@/utils/convert.js";
 import {formatDetailDate} from "@/utils/day.js";
 import {useSettingStore} from "@/store/setting.js";
 import {userDraftStore} from "@/store/draft.js";
+import {useSignatureStore} from "@/store/signature.js";
 import {useWriterStore} from "@/store/writer.js";
 import db from "@/db/db.js";
 import dayjs from "dayjs";
@@ -128,6 +145,7 @@ const draftStore = userDraftStore()
 const settingStore = useSettingStore()
 const emailStore = useEmailStore();
 const accountStore = useAccountStore()
+const signatureStore = useSignatureStore();
 const editor = ref({})
 const userStore = useUserStore();
 const show = ref(false);
@@ -516,8 +534,18 @@ function open() {
     form.accountId = accountStore.currentAccount.accountId;
     form.name = accountStore.currentAccount.name;
   }
+  signatureStore.fetch().then(() => {
+    const def = signatureStore.defaultSignature;
+    if (def) {
+      nextTick(() => editor.value.insertContent && editor.value.insertContent(def.content));
+    }
+  });
   show.value = true;
   editor.value.focus()
+}
+
+function insertSignature(sig) {
+  editor.value.insertContent && editor.value.insertContent(sig.content);
 }
 
 function openDraft(draft) {
