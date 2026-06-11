@@ -120,7 +120,7 @@ import { useRoute } from "vue-router";
 import {Icon} from "@iconify/vue";
 import {useSettingStore} from "@/store/setting.js";
 import {useLabelStore} from "@/store/label.js";
-import {onMounted, ref, computed, reactive} from "vue";
+import {onMounted, ref, computed, reactive, watch} from "vue";
 import labelDialog from "@/components/label-dialog/index.vue";
 
 const settingStore = useSettingStore();
@@ -161,6 +161,20 @@ function toggleCollapse(labelId) {
     collapsedParents.add(labelId);
   }
 }
+
+// Collapse all parent labels by default
+watch(() => labelStore.tree, (tree) => {
+  collapsedParents.clear();
+  function collect(nodes) {
+    (nodes || []).forEach(node => {
+      if (node.children && node.children.length) {
+        collapsedParents.add(node.labelId);
+        collect(node.children);
+      }
+    });
+  }
+  collect(tree);
+}, { deep: true });
 
 onMounted(() => {
   labelStore.fetch().catch(() => {});
