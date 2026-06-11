@@ -197,14 +197,19 @@ const navNextSubject = computed(() => {
 function goPrevEmail() {
   if (!hasNavPrev.value) return
   const idx = emailStore.contentData.navIndex - 1
-  emailStore.contentData.email = emailStore.contentData.navList[idx]
+  const next = emailStore.contentData.navList[idx]
+  if (!next) return
+  // Object.assign into the existing reactive object so Vue picks up changes
+  Object.assign(emailStore.contentData.email, next)
   emailStore.contentData.navIndex = idx
 }
 
 function goNextEmail() {
   if (!hasNavNext.value) return
   const idx = emailStore.contentData.navIndex + 1
-  emailStore.contentData.email = emailStore.contentData.navList[idx]
+  const next = emailStore.contentData.navList[idx]
+  if (!next) return
+  Object.assign(emailStore.contentData.email, next)
   emailStore.contentData.navIndex = idx
 }
 
