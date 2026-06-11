@@ -43,7 +43,7 @@
                 class="label-item"
                 :class="String(route.params.labelId) === String(lab.labelId) ? 'choose-item' : ''"
                 :style="{ paddingLeft: (12 + (lab.depth || 0) * 16) + 'px' }"
-                @click="editLabel(lab)"
+                @click="goLabelView(lab)"
             >
               <span class="label-dot" :style="{ background: lab.color }"></span>
               <span class="label-name">{{ lab.name }}</span>

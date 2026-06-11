@@ -18,7 +18,7 @@
           :style="{ paddingLeft: (4 + (lab.depth || 0) * 20) + 'px' }"
       >
         <span class="dot" :style="{ background: lab.color }"></span>
-        <span class="name" @click="goLabel(lab)">{{ lab.name }}</span>
+        <span class="name" @click="startEdit(lab)">{{ lab.name }}</span>
         <div class="actions">
           <Icon class="icon" icon="ep:edit" width="16" height="16" @click="startEdit(lab)" />
           <Icon class="icon" icon="uiw:delete" width="14" height="14" @click="confirmDelete(lab)" />
@@ -424,6 +424,6 @@ defineExpose({open});
 
 <style>
 .label-dialog-popper {
-  z-index: 4000 !important;
+  z-index: 5001 !important;
 }
 </style>
