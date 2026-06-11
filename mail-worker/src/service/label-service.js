@@ -2,6 +2,7 @@ import orm from '../entity/orm';
 import { label } from '../entity/label';
 import { emailLabel } from '../entity/email-label';
 import email from '../entity/email';
+import { star } from '../entity/star';
 import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
 import BizError from '../error/biz-error';
 import { archivedConst, isDel } from '../const/entity-const';
@@ -155,11 +156,16 @@ const labelService = {
 		if (!emailId) emailId = 9999999999;
 		if (!size || size > 50) size = 50;
 
-		const list = await orm(c).select({
+	const list = await orm(c).select({
 			...email,
+			starId: star.starId,
 			elId: emailLabel.id
 		}).from(emailLabel)
 			.leftJoin(email, eq(email.emailId, emailLabel.emailId))
+			.leftJoin(
+				star,
+				and(eq(star.emailId, email.emailId), eq(star.userId, userId))
+			)
 			.where(and(
 				eq(emailLabel.userId, userId),
 				eq(emailLabel.labelId, labelId),
@@ -168,6 +174,11 @@ const labelService = {
 			))
 			.orderBy(desc(emailLabel.emailId))
 			.limit(size).all();
+
+		// Map starId → isStar for frontend
+		list.forEach(item => {
+			item.isStar = item.starId != null ? 1 : 0;
+		});
 
 		const emailIds = list.map(item => item.emailId);
 		if (emailIds.length > 0) {
