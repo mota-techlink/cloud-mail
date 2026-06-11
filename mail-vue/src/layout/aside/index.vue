@@ -37,24 +37,29 @@
             <span class="labels-title">{{ $t('labels') }}</span>
           </div>
           <div v-show="labelsOpen" class="labels-list">
-            <div
-                v-for="lab in labelStore.labels"
-                :key="lab.labelId"
-                class="label-item"
-                :class="String(route.params.labelId) === String(lab.labelId) ? 'choose-item' : ''"
-                :style="{ paddingLeft: (12 + (lab.depth || 0) * 16) + 'px' }"
-                @click="goLabelView(lab)"
-            >
-              <span class="label-dot" :style="{ background: lab.color }"></span>
-              <span class="label-name">{{ lab.name }}</span>
-              <Icon
-                  class="label-go"
-                  icon="ep:arrow-right-bold"
-                  width="12"
-                  height="12"
-                  @click.stop="goLabelView(lab)"
-              />
-            </div>
+            <template v-for="item in visibleLabels" :key="item.label.labelId">
+              <div
+                  v-show="!item.hidden"
+                  class="label-item"
+                  :class="String(route.params.labelId) === String(item.label.labelId) ? 'choose-item' : ''"
+                  :style="{ paddingLeft: (12 + item.depth * 16) + 'px' }"
+                  @click="goLabelView(item.label)"
+              >
+                <span v-if="item.hasChildren" class="label-toggle" @click.stop="toggleCollapse(item.label.labelId)">
+                  <Icon :icon="item.collapsed ? 'ep:arrow-right' : 'ep:arrow-down'" width="12" height="12" />
+                </span>
+                <span v-else class="label-toggle-placeholder"></span>
+                <span class="label-dot" :style="{ background: item.label.color }"></span>
+                <span class="label-name">{{ item.label.name }}</span>
+                <Icon
+                    class="label-go"
+                    icon="ep:arrow-right-bold"
+                    width="12"
+                    height="12"
+                    @click.stop="goLabelView(item.label)"
+                />
+              </div>
+            </template>
             <div class="label-item add-item" @click="openCreateDialog">
               <Icon icon="ep:plus" width="14" height="14" />
               <span class="label-name">{{ $t('newLabel') }}</span>
@@ -115,7 +120,7 @@ import { useRoute } from "vue-router";
 import {Icon} from "@iconify/vue";
 import {useSettingStore} from "@/store/setting.js";
 import {useLabelStore} from "@/store/label.js";
-import {onMounted, ref} from "vue";
+import {onMounted, ref, computed, reactive} from "vue";
 import labelDialog from "@/components/label-dialog/index.vue";
 
 const settingStore = useSettingStore();
@@ -123,6 +128,39 @@ const labelStore = useLabelStore();
 const route = useRoute();
 const labelsOpen = ref(true);
 const labelDialogRef = ref(null);
+
+// Collapsible parent labels
+const collapsedParents = reactive(new Set());
+const visibleLabels = computed(() => {
+  const result = [];
+  function walk(nodes, depth, hidden) {
+    if (!nodes) return;
+    nodes.forEach(node => {
+      const hasChildren = node.children && node.children.length > 0;
+      const isCollapsed = collapsedParents.has(node.labelId);
+      result.push({
+        label: node,
+        depth,
+        hasChildren,
+        collapsed: isCollapsed,
+        hidden
+      });
+      if (hasChildren) {
+        walk(node.children, depth + 1, hidden || isCollapsed);
+      }
+    });
+  }
+  walk(labelStore.tree, 0, false);
+  return result;
+});
+
+function toggleCollapse(labelId) {
+  if (collapsedParents.has(labelId)) {
+    collapsedParents.delete(labelId);
+  } else {
+    collapsedParents.add(labelId);
+  }
+}
 
 onMounted(() => {
   labelStore.fetch().catch(() => {});
@@ -239,12 +277,26 @@ function goLabelView(lab) {
     .label-item {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       padding: 6px 12px;
       margin: 2px 0;
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
+      .label-toggle {
+        width: 12px;
+        height: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        opacity: 0.6;
+        &:hover { opacity: 1; }
+      }
+      .label-toggle-placeholder {
+        width: 12px;
+        flex-shrink: 0;
+      }
       .label-dot {
         width: 10px;
         height: 10px;
