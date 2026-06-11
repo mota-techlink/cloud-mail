@@ -105,12 +105,26 @@
         @close="showPreview = false"
     />
     <labelDialog ref="labelDialogRef" />
+
+    <!-- Floating prev/next email navigation -->
+    <div class="email-nav-float" v-if="hasNavPrev || hasNavNext">
+      <el-tooltip :content="navPrevSubject" placement="left" effect="dark" :disabled="!hasNavPrev">
+        <div class="nav-btn" :class="{ disabled: !hasNavPrev }" @click="goPrevEmail">
+          <Icon icon="material-symbols:keyboard-arrow-up-rounded" width="24" height="24" />
+        </div>
+      </el-tooltip>
+      <el-tooltip :content="navNextSubject" placement="left" effect="dark" :disabled="!hasNavNext">
+        <div class="nav-btn" :class="{ disabled: !hasNavNext }" @click="goNextEmail">
+          <Icon icon="material-symbols:keyboard-arrow-down-rounded" width="24" height="24" />
+        </div>
+      </el-tooltip>
+    </div>
   </div>
 </template>
 <script setup>
 import ShadowHtml from '@/components/shadow-html/index.vue'
 import labelDialog from '@/components/label-dialog/index.vue'
-import {reactive, ref, watch, onMounted, onUnmounted} from "vue";
+import {reactive, ref, watch, onMounted, onUnmounted, computed} from "vue";
 import {useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {emailDelete, emailRead, emailArchive, emailUnarchive} from "@/request/email.js";
@@ -160,6 +174,39 @@ const router = useRouter()
 const email = emailStore.contentData.email
 const showPreview = ref(false)
 const srcList = reactive([])
+
+// Email navigation — floating prev/next
+const hasNavPrev = computed(() => {
+  return emailStore.contentData.navIndex > 0 && emailStore.contentData.navList.length > 0
+})
+const hasNavNext = computed(() => {
+  const list = emailStore.contentData.navList
+  return emailStore.contentData.navIndex >= 0 && emailStore.contentData.navIndex < list.length - 1
+})
+const navPrevSubject = computed(() => {
+  if (!hasNavPrev.value) return ''
+  const e = emailStore.contentData.navList[emailStore.contentData.navIndex - 1]
+  return e ? (e.subject || '(no subject)') : ''
+})
+const navNextSubject = computed(() => {
+  if (!hasNavNext.value) return ''
+  const e = emailStore.contentData.navList[emailStore.contentData.navIndex + 1]
+  return e ? (e.subject || '(no subject)') : ''
+})
+
+function goPrevEmail() {
+  if (!hasNavPrev.value) return
+  const idx = emailStore.contentData.navIndex - 1
+  emailStore.contentData.email = emailStore.contentData.navList[idx]
+  emailStore.contentData.navIndex = idx
+}
+
+function goNextEmail() {
+  if (!hasNavNext.value) return
+  const idx = emailStore.contentData.navIndex + 1
+  emailStore.contentData.email = emailStore.contentData.navList[idx]
+  emailStore.contentData.navIndex = idx
+}
 
 const { t } = useI18n()
 watch(() => accountStore.currentAccountId, () => {
@@ -533,6 +580,58 @@ const handleDelete = () => {
 
 .bottom-distance {
   margin-bottom: 30px;
+}
+
+/* Floating prev/next email navigation */
+.email-nav-float {
+  position: fixed;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 1000;
+}
+
+.nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  transition: all 0.2s;
+  color: var(--el-text-color-regular);
+}
+
+.nav-btn:hover:not(.disabled) {
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+
+.nav-btn.disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+@media (max-width: 767px) {
+  .email-nav-float {
+    right: 12px;
+    top: auto;
+    bottom: 80px;
+    transform: none;
+    gap: 4px;
+  }
+  .nav-btn {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 

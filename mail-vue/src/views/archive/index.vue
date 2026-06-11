@@ -35,6 +35,8 @@ function jumpContent(email) {
   emailStore.contentData.showReply = true
   emailStore.contentData.showArchive = true
   emailStore.contentData.archived = 1
+  emailStore.contentData.navList = [...scroll.value.emailList]
+  emailStore.contentData.navIndex = scroll.value.emailList.findIndex(e => e.emailId === email.emailId)
   router.push('/message')
 }
 

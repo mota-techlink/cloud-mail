@@ -60,6 +60,8 @@ function jumpContent(email) {
   emailStore.contentData.delType = 'logic'
   emailStore.contentData.showStar = true
   emailStore.contentData.showReply = true
+  emailStore.contentData.navList = [...sendScroll.value.emailList]
+  emailStore.contentData.navIndex = sendScroll.value.emailList.findIndex(e => e.emailId === email.emailId)
   router.push('/message')
 }
 

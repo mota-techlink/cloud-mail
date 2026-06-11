@@ -284,6 +284,8 @@ function jumpContent(email) {
   emailStore.contentData.delType = 'physics'
   emailStore.contentData.showStar = false
   emailStore.contentData.showReply = false
+  emailStore.contentData.navList = [...sysEmailScroll.value.emailList]
+  emailStore.contentData.navIndex = sysEmailScroll.value.emailList.findIndex(e => e.emailId === email.emailId)
   router.push({name: 'content'})
 }
 
