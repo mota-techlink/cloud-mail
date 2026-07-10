@@ -18,4 +18,9 @@ app.delete('/my/delete', async (c) => {
 	return c.json(result.ok());
 });
 
+app.put('/my/updateLang', async (c) => {
+	await userService.updateLang(c, await c.req.json(), userContext.getUserId(c));
+	return c.json(result.ok());
+});
+
 

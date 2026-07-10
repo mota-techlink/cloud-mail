@@ -68,7 +68,7 @@
 </template>
 <script setup>
 import {reactive, ref, defineOptions} from 'vue'
-import {resetPassword, userDelete} from "@/request/my.js";
+import {resetPassword, userDelete, updateLang} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
 import {accountSetName} from "@/request/account.js";
@@ -130,7 +130,10 @@ function setName() {
   })
 }
 
-function changeLang(lang) {
+async function changeLang(lang) {
+  // sync to server and wait for it to complete
+  await updateLang(lang).catch(() => {});
+  // persist locally + reload
   let setting = {}
   try {
     setting = JSON.parse(localStorage.getItem('setting') || '{}')
