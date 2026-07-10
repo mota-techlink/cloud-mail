@@ -7,6 +7,33 @@ import router from "@/router";
 import {websiteConfig} from "@/request/setting.js";
 import i18n from "@/i18n/index.js";
 
+function resolveLang(user) {
+    // priority: user.lang (server) → localStorage → navigator → 'en'
+    if (user && user.lang) return user.lang;
+    const localLang = localStorage.getItem('setting');
+    if (localLang) {
+        try {
+            const parsed = JSON.parse(localLang);
+            if (parsed.lang) return parsed.lang;
+        } catch (e) {}
+    }
+    const navLang = navigator.language.split('-')[0];
+    return navLang === 'zh' ? 'zh' : 'en';
+}
+
+function applyLang(lang) {
+    const settingStore = useSettingStore();
+    settingStore.lang = lang;
+    i18n.global.locale.value = lang;
+    // persist to localStorage so it survives page reload before API returns
+    let setting = {};
+    try {
+        setting = JSON.parse(localStorage.getItem('setting') || '{}');
+    } catch (e) {}
+    setting.lang = lang;
+    localStorage.setItem('setting', JSON.stringify(setting));
+}
+
 export async function init() {
     document.title = '\u200B'
 
@@ -15,13 +42,6 @@ export async function init() {
     const accountStore = useAccountStore();
 
     const token = localStorage.getItem('token');
-    if (!settingStore.lang) {
-        let lang = navigator.language.split('-')[0]
-        lang = lang === 'zh' ? lang : 'en'
-        settingStore.lang = lang
-    }
-
-    i18n.global.locale.value = settingStore.lang
 
     let setting = null;
 
@@ -48,10 +68,16 @@ export async function init() {
             });
         }
 
+        // resolve lang: server-stored → localStorage → navigator → 'en'
+        applyLang(resolveLang(user));
+
     } else {
         setting = await websiteConfig();
         settingStore.settings = setting;
         settingStore.domainList = setting.domainList;
         document.title = setting.title;
+
+        // no user → localStorage → navigator → 'en'
+        applyLang(resolveLang(null));
     }
 }

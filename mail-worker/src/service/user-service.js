@@ -43,7 +43,8 @@ const userService = {
 		user.name = account.name;
 		user.permKeys = permKeys;
 		user.role = roleRow;
-		user.type = userRow.type;
+				user.type = userRow.type;
+				user.lang = userRow.lang || 'en';
 
 		if (c.env.admin === userRow.email) {
 			user.role = constant.ADMIN_ROLE
@@ -62,10 +63,15 @@ const userService = {
 			throw new BizError(t('pwdMinLength'));
 		}
 		const { salt, hash } = await cryptoUtils.hashPassword(password);
-		await orm(c).update(user).set({ password: hash, salt: salt }).where(eq(user.userId, userId)).run();
-	},
+				await orm(c).update(user).set({ password: hash, salt: salt }).where(eq(user.userId, userId)).run();
+			},
 
-	selectByEmail(c, email) {
+			async updateLang(c, params, userId) {
+				const { lang } = params;
+				await orm(c).update(user).set({ lang }).where(eq(user.userId, userId)).run();
+			},
+
+			selectByEmail(c, email) {
 		return orm(c).select().from(user).where(
 			and(
 				eq(user.email, email),
