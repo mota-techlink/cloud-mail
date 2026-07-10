@@ -12,7 +12,3 @@ export function userDelete() {
     return http.delete('/my/delete')
 }
 
-export function updateLang(lang) {
-    return http.put('/my/updateLang', { lang })
-}
-
